@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'form.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.1
+## Created by: Qt User Interface Compiler version 6.6.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -15,10 +15,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QFrame, QGridLayout,
-    QHeaderView, QLabel, QMainWindow, QMenuBar,
-    QPushButton, QSizePolicy, QSpacerItem, QStatusBar,
-    QTreeWidget, QTreeWidgetItem, QWidget)
+from PySide6.QtWidgets import (QApplication, QFrame, QGraphicsView, QGridLayout,
+                               QLabel, QMainWindow, QMenuBar, QPushButton,
+                               QSizePolicy, QSpacerItem, QStatusBar, QWidget, QGraphicsScene)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -49,32 +48,11 @@ class Ui_MainWindow(object):
 
         self.gridLayout_3.addWidget(self.label, 0, 0, 1, 1)
 
-        self.tree_main = QTreeWidget(self.frame)
-        __qtreewidgetitem = QTreeWidgetItem()
-        __qtreewidgetitem.setText(0, u"1");
-        self.tree_main.setHeaderItem(__qtreewidgetitem)
-        self.tree_main.setObjectName(u"tree_main")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(1)
-        sizePolicy1.setHeightForWidth(self.tree_main.sizePolicy().hasHeightForWidth())
-        self.tree_main.setSizePolicy(sizePolicy1)
-        self.tree_main.setFrameShape(QFrame.StyledPanel)
-        self.tree_main.setFrameShadow(QFrame.Sunken)
-        self.tree_main.setMidLineWidth(1)
-        self.tree_main.setEditTriggers(QAbstractItemView.DoubleClicked|QAbstractItemView.EditKeyPressed)
-        self.tree_main.setDragEnabled(True)
-        self.tree_main.setDragDropOverwriteMode(False)
-        self.tree_main.setDragDropMode(QAbstractItemView.DropOnly)
-        self.tree_main.setDefaultDropAction(Qt.MoveAction)
-        self.tree_main.setAlternatingRowColors(False)
-        self.tree_main.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.tree_main.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.tree_main.setRootIsDecorated(True)
-        self.tree_main.setColumnCount(1)
-        self.tree_main.header().setVisible(False)
+        self.scene = QGraphicsScene(self.frame)
+        self.gph_view = QGraphicsView(self.scene)
+        self.gph_view.setObjectName(u"gph_view")
 
-        self.gridLayout_3.addWidget(self.tree_main, 1, 0, 1, 1)
+        self.gridLayout_3.addWidget(self.gph_view, 1, 0, 1, 1)
 
 
         self.gridLayout.addWidget(self.frame, 2, 0, 1, 1)
@@ -100,21 +78,21 @@ class Ui_MainWindow(object):
 
         self.btn_start = QPushButton(self.centralwidget)
         self.btn_start.setObjectName(u"btn_start")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.btn_start.sizePolicy().hasHeightForWidth())
-        self.btn_start.setSizePolicy(sizePolicy2)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.btn_start.sizePolicy().hasHeightForWidth())
+        self.btn_start.setSizePolicy(sizePolicy1)
 
         self.gridLayout.addWidget(self.btn_start, 0, 0, 1, 1)
 
         self.frm_viewport = QFrame(self.centralwidget)
         self.frm_viewport.setObjectName(u"frm_viewport")
-        sizePolicy3 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.frm_viewport.sizePolicy().hasHeightForWidth())
-        self.frm_viewport.setSizePolicy(sizePolicy3)
+        sizePolicy2 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.frm_viewport.sizePolicy().hasHeightForWidth())
+        self.frm_viewport.setSizePolicy(sizePolicy2)
         self.frm_viewport.setFrameShape(QFrame.StyledPanel)
         self.frm_viewport.setFrameShadow(QFrame.Raised)
         self.gridLayout_2 = QGridLayout(self.frm_viewport)
@@ -127,7 +105,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 883, 24))
+        self.menubar.setGeometry(QRect(0, 0, 883, 21))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")

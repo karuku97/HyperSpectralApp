@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 from spectral import envi
 import spectral as sp
-import cv2.cv2 as cv
+import cv2 as cv
 from PIL import Image
 from PIL.ImageQt import ImageQt
 import numpy as np

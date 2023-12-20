@@ -3,7 +3,8 @@ import sys
 
 import functions
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem
+from PySide6.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem, QGraphicsRectItem, QGraphicsItem, \
+    QGraphicsTextItem, QGraphicsSceneMouseEvent, QGraphicsLineItem
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 from PySide6.QtQuickControls2 import *
@@ -14,6 +15,47 @@ from PySide6.QtQuickControls2 import *
 from ui_form import Ui_MainWindow
 from secondwindows import *
 
+class DraggableRectItemBlock(QGraphicsRectItem):
+    def __init__(self, rect, index, main_window, parent=None):
+        super().__init__(rect, parent)
+        self.main_window = main_window
+        self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
+        self.setBrush(QBrush(Qt.lightGray))
+        self.index = index
+        self.original_position = None
+        self.TextItem = QGraphicsTextItem("Text", self)
+        self.rect_height = 200
+        self.rect_width = 50
+
+    def mousePressEvent(self, event: QMouseEvent):
+        self.original_position = self.pos()
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        self.main_window.updateItemPosition(self, self.index)
+        super().mouseReleaseEvent(event)
+
+
+class DraggableRectItemConnector(QGraphicsRectItem):
+    def __init__(self, rect, main_window, parent):
+        super().__init__(rect, parent)
+        self.setParentItem(parent)
+        self.setFlags(QGraphicsItem.ItemIsSelectable )
+        self.setBrush(QBrush(Qt.lightGray))
+        self.main_window = main_window
+        self.connectedTo = []
+        self.rect_height = 10
+        self.rect_width = 10
+
+        self.original_position = None
+
+    def mousePressEvent(self, event: QMouseEvent):
+        self.original_position = self.pos()
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        self.main_window.connectConnectors(self,event)
+        super().mouseReleaseEvent(event)
 
 class MainWindow(QMainWindow):
     """MainWindow"""
@@ -29,23 +71,10 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        # Event connections
-        # connect start Button to Funktion
-        self.ui.btn_start.pressed.connect(self.start_btn_pressed)
-        # connect delete Button to Funktion
-        self.ui.btn_delete.pressed.connect(self.delete_btn_pressed)
-        # connect connect Button to Funktion
-        self.ui.btn_connect.pressed.connect(self.connectInputOutput)
-        # connect LibraryBrowser Button to Funktion
-        self.ui.btn_libraryBrowser.pressed.connect(self.libWin.show)
-        # connect Main Tree clicked Event to Funktion
-        self.ui.tree_main.clicked.connect(self.updateViewport)
-        # add Eventfilter to Main Tree
-        self.ui.tree_main.installEventFilter(self)
 
-        # Show Ready Messge on Status Bar
+        # # Show Ready Messge on Status Bar
         self.ui.statusbar.showMessage("Ready")
-
+        #
         # info Text
         self.info = (f'Instructions:\n'
                      f'\n1. choose functions from "Library Brwoser"\n'
@@ -62,9 +91,12 @@ class MainWindow(QMainWindow):
         # instructions for first display
         self.showInstructions()
 
-        self.ui.label.mousePressEvent = self.showInstructions
+        self.blocks = []
+        self.create_blocks(5)
+
 
     def showErrorMassage(self, string: str):
+
         """sends Error Massage"""
         # print to Consol
         print(string)
@@ -72,6 +104,7 @@ class MainWindow(QMainWindow):
         self.ui.statusbar.showMessage(string)
 
     def showInstructions(self,e=None):
+        pass
         """Mouse click call back funktion for showing Instructions """
         # delet current Frame
         wid = self.ui.gridLayout_2.itemAtPosition(0, 0)
@@ -83,146 +116,140 @@ class MainWindow(QMainWindow):
         self.ui.gridLayout_2.addWidget(label, 0, 0)
         label.setText(self.info)
 
+    def create_blocks(self, count):
+        rect_height = 50
+        rect_width = 200
+
+        for i in range(count):
+            y_offset = i * (rect_height + 10)
+            rect = DraggableRectItemBlock(QRectF(0, 0, rect_width, rect_height), i, self)
+            rect.setPos(0,y_offset)
+            rect.rect_height = rect_height
+            rect.rect_width = rect_width
+
+            rect.TextItem.setPos(10, 10)
+            rect.TextItem.setPlainText(f'Block {i}')
+
+            input = DraggableRectItemConnector(QRectF(rect_width,(rect_height/2)-5,10,10),self,rect)
+
+
+            self.ui.scene.addItem(rect)
+            self.blocks.append(rect)
+
+
+    def updateItemPosition(self, moved_item, moved_index):
+        #print(moved_item.TextItem.toPlainText())
+        rect_height = 50
+        new_index = round(moved_item.y() / (rect_height + 10))
+        new_index = max(0, min(new_index, len(self.blocks) - 1))
+
+        # Entfernen des verschobenen Blocks aus seiner alten Position
+        if new_index != moved_index:
+            self.blocks.pop(moved_index)
+            # Einfügen des verschobenen Blocks an der neuen Position
+            self.blocks.insert(new_index, moved_item)
+
+        # Aktualisieren der Positionen aller Blöcke
+        for i, block in enumerate(self.blocks):
+            block.index = i
+            target_y = i * (rect_height + 10)
+            if block.y() != target_y:
+                block.setPos(QPointF(0, target_y))
+
+        self.updateAllConnections()
+
+    def connectConnectors(self, moved_connecor: DraggableRectItemConnector, event: QGraphicsSceneMouseEvent):
+        itemAtClick = moved_connecor
+        # print(moved_connecor.parentItem().TextItem.toPlainText())
+        # print(event)
+        itemAtRelease = self.ui.scene.itemAt(event.scenePos().x(), event.scenePos().y(), self.ui.gph_view.transform())
+        print(itemAtRelease.parentItem().TextItem.toPlainText())
+        print(itemAtRelease.scenePos())
+        if isinstance(itemAtRelease, DraggableRectItemConnector):
+            itemAtClick.connectedTo.append(itemAtRelease)
+            itemAtRelease.connectedTo.append(itemAtClick)
+
+            # offset berechnen
+            offset = 10
+            i = itemAtRelease.parentItem().index + itemAtClick.parentItem().index
+
+            # Vertikale linie
+            x1 = itemAtClick.rect().x() + 5 + (i * offset)
+            y1 = itemAtClick.rect().y() + 5
+            x2 = itemAtRelease.parentItem().rect().x() + itemAtRelease.parentItem().rect_width + itemAtRelease.rect_width / 2 + (
+                        i * offset)
+            y2 = itemAtRelease.parentItem().y() + itemAtRelease.parentItem().rect_height / 2 - itemAtClick.parentItem().y()
+            line = QGraphicsLineItem(x1, y1, x2, y2, moved_connecor)
+
+            # Horrizontale linie
+
+            line = QGraphicsLineItem(x1 - (i * offset), y1, x1, y1, moved_connecor)
+            line = QGraphicsLineItem(x2 - (i * offset), y2, x2, y2, moved_connecor)
+
+            # self.scene.addItem(line)
+            print("connect")
+        print("Draged")
+
+    def updateAllConnections(self):
+        for b in self.blocks:
+            #b = DraggableRectItemBlock
+            for b_c in b.childItems():
+                if(isinstance(b_c,DraggableRectItemConnector)):
+                    #print(b_c)
+                    con_from = b_c
+
+                    for con_to in b_c.connectedTo:
+                        #print(con_to)
+                        if con_to is not None :
+
+                            for child in b_c.childItems():
+                                #print(child)
+                                self.ui.scene.removeItem(child)
+                                del child
+
+
+
+                            # offset berechnen
+                            offset = 10
+                            i = con_to.parentItem().index + con_from.parentItem().index
+
+                            # Vertikale linie
+                            x1 = con_from.rect().x() + 5 + (i * offset)
+                            y1 = con_from.rect().y() + 5
+                            x2 = con_to.parentItem().rect().x() + con_to.parentItem().rect_width + con_to.rect_width / 2 + (
+                                        i * offset)
+                            y2 = con_to.parentItem().y() + con_to.parentItem().rect_height / 2 - con_from.parentItem().y()
+                            line1 = QGraphicsLineItem(x1, y1, x2, y2, con_from)
+
+                            # Horrizontale linie
+
+                            line2 = QGraphicsLineItem(x1 - (i * offset), y1, x1, y1, con_from)
+                            line3 = QGraphicsLineItem(x2 - (i * offset), y2, x2, y2, con_from)
+
+
     def updateViewport(self):
-        """ Method to Update Viewport to selectet Funktion in Run Diagramm
-        sets QFrame from selectet Funktion to display"""
+        pass
 
-        # get all selected Items on Main Tree
-        items = self.ui.tree_main.selectedItems()
-        # check if only one Item is selected and needs to be a Top Level Item
-        if len(items) == 1:
-            if items[0].parent() == None:
-
-                # delet current Frame
-                wid = self.ui.gridLayout_2.itemAtPosition(0, 0)
-                if wid != None: wid.widget().setParent(None)
-
-                # gets Frame from selected Funktion
-                item = items[0].data(0, Qt.ItemDataRole.UserRole)
-                wid = item.get_Viewport(self)
-                # adds Frame to GridLayout
-                self.ui.gridLayout_2.addWidget(wid, 0, 0)
-                self.ui.gridLayout_2.setContentsMargins(0, 0, 0, 0)
 
     def connectInputOutput(self):
-        """ connects One Input to an Output of the Funktion Diagram, Call by Button (connect)"""
-        # gets all selected Items
-        items = self.ui.tree_main.selectedItems()
+        pass
 
-        # checks if Items are two
-        if len(items) == 2:
-            # checks if selected items are named "Input" and "Output"
-            if ((items[1].text(0) == "Input" and items[0].text(0) == "Output") or (
-                    items[0].text(0) == "Input" and items[1].text(0) == "Output")):
-                # sets the TreeItem as Data of the other Treeitem and vicevercer
-                items[0].setData(0, Qt.ItemDataRole.UserRole, items[1])
-                items[1].setData(0, Qt.ItemDataRole.UserRole, items[0])
-
-                # checks if Data is set and modifys Backgroundcolor to green, if connection were made
-                for item in items:
-                    if item.data(0, Qt.ItemDataRole.UserRole) != None:
-                        item.setBackground(0, Qt.green)
-            # if wrong Items were selected.. show Error Massage
-            else:
-                self.showErrorMassage("Error: Selected items needs to be nemed 'Input' and 'Output")
-        # if not exactly two Items were selected.. show an Error Massage
-        else:
-            self.showErrorMassage("Error: not exactly two Items were selected")
 
     def eventFilter(self, o, e) -> bool:
-        """ EventFilter to call Update View, to add Input and Ouput Ports to Function in Run Diagram"""
-        # checks if Event comes rom Main Tree and Toplevel count has changed
-        if o == self.ui.tree_main and self.current_TopLevelCount != self.ui.tree_main.topLevelItemCount():
-            # calls update Funktion
-            self.updateView()
-            # sets current TopLevel Count
-            self.current_TopLevelCount = self.ui.tree_main.topLevelItemCount()
-        return True
+        pass
+
 
     def updateView(self):
-        """ Updates Run Diagramm, is called by EventFilter. Adds Input and Output Points"""
-        # loops throuh every TopLevel Item in Main Tree
-        for i in range(self.ui.tree_main.topLevelItemCount()):
-            item = self.ui.tree_main.topLevelItem(i)
-            data = item.data(0, Qt.ItemDataRole.UserRole)
-            # checks if current child count is not equal to supposed Input/Output count
-            if item.childCount() != data.output_count + data.input_count:
-                # takes all current children
-                for j in range(item.childCount()):
-                    item.takeChildren()
-                # adds Inputs as Children
-                for i in range(data.input_count):
-                    child = QTreeWidgetItem()
-                    child.setText(0, "Input")
-                    item.addChild(child)
-                # adds Outputs as Children
-                for z in range(data.output_count):
-                    child = QTreeWidgetItem()
-                    child.setText(0, "Output")
-                    # child.setData(0, Qt.ItemDataRole.UserRole, data.input_point)
-                    item.addChild(child)
-            # loops throu every Child
-            for j in range(item.childCount()):
-                child = item.child(j)
-                # checks if child has no Data and sets Backgroundcolor to red + takes all children of the child
-                if child.data(0, Qt.ItemDataRole.UserRole) == None:
-                    child.setBackground(0, Qt.red)
-                    child.takeChildren()
+        pass
+
 
     def start_btn_pressed(self):
-        """Called by Start Button, Runs the Run Diagramm from Top to bottom and sets all predefined OutPut Input
-        connections"""
+        pass
 
-        # checks if Funktions are in the main Tree
-        if self.ui.tree_main.topLevelItemCount() == 0:
-            self.showErrorMassage("Error: No actions provided")
-            return False
-
-        # loops throu Main Tree Items from top to bottom
-        for i in range(self.ui.tree_main.topLevelItemCount()):
-            first = self.ui.tree_main.topLevelItem(i)
-            data = first.data(0, Qt.ItemDataRole.UserRole)
-
-            # chekcks if more than 1 Funktions are provided
-            if i > 0:
-                # gets connected Input ( First Child )
-                connected_input = first.child(0).data(0, Qt.ItemDataRole.UserRole)
-                # checks if Input Element were provided els shows Error Massage
-                if connected_input == None:
-                    self.showErrorMassage("Error: Missing Connection!")
-                    return False
-                # sets input data to output data of
-                dataa = connected_input.parent().data(0, Qt.ItemDataRole.UserRole)
-                data.input_value = dataa.output_value
-            # runs Funktion
-            rtn = data.run()
-            # checks if Funktion were run succsessfully
-            if rtn != True:
-                self.showErrorMassage("Error: in Fuction")
-                return False
-
-        # prints Success Message
-        self.showErrorMassage("Run successfully")
-        # updates Viewport
-        self.updateViewport()
 
     def delete_btn_pressed(self):
-        """Delets selected functions in Run Diagram, call at Button Press (delete)"""
-        tree = self.ui.tree_main
-        root = tree.invisibleRootItem()
-        # loops throu selected itmes and their children of Main Tree
-        for item in tree.selectedItems():
-            for i in range(item.childCount()):
-                child = item.child(i)
-                # gets connected Input and Output Items
-                connected = child.data(0, Qt.ItemDataRole.UserRole)
-                if (connected != None):
-                    # sets Input and Output elements to None
-                    connected.setData(0, Qt.ItemDataRole.UserRole, None)
-            # removes items
-            (item.parent() or root).removeChild(item)
-        # updates Tree View
-        self.updateView()
+
+        pass
 
     def closeEvent(self, e):
         """Close Event, for MainWindow"""
