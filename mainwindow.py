@@ -74,7 +74,13 @@ class MainWindow(QMainWindow):
 
         # # Show Ready Messge on Status Bar
         self.ui.statusbar.showMessage("Ready")
-        #
+
+        # add Button Callbacks
+
+        self.ui.btn_start.pressed.connect(self.start_btn_pressed)
+        self.ui.btn_delete.pressed.connect(self.delete_btn_pressed)
+        self.ui.btn_libraryBrowser.pressed.connect(self.create_fct_block)
+
         # info Text
         self.info = (f'Instructions:\n'
                      f'\n1. choose functions from "Library Brwoser"\n'
@@ -135,6 +141,27 @@ class MainWindow(QMainWindow):
 
             self.ui.scene.addItem(rect)
             self.blocks.append(rect)
+
+    def create_fct_block(self):
+        rect_height = 50
+        rect_width = 200
+
+        i = len(self.blocks)
+
+        y_offset = i * (rect_height + 10)
+        rect = DraggableRectItemBlock(QRectF(0, 0, rect_width, rect_height), i, self)
+        rect.setPos(0, y_offset)
+        rect.rect_height = rect_height
+        rect.rect_width = rect_width
+
+        rect.TextItem.setPos(10, 10)
+        rect.TextItem.setPlainText(f'Block {i}')
+
+        input = DraggableRectItemConnector(QRectF(rect_width, (rect_height / 2) - 5, 10, 10), self, rect)
+
+        self.ui.scene.addItem(rect)
+        self.blocks.append(rect)
+
 
 
     def updateItemPosition(self, moved_item, moved_index):
