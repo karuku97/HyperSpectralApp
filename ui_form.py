@@ -50,6 +50,7 @@ class Ui_MainWindow(object):
 
         self.scene = QGraphicsScene(self.frame)
         self.gph_view = QGraphicsView(self.scene)
+
         self.gph_view.setObjectName(u"gph_view")
 
         self.gridLayout_3.addWidget(self.gph_view, 1, 0, 1, 1)
@@ -71,10 +72,6 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addItem(self.horizontalSpacer, 0, 6, 1, 1)
 
-        self.btn_connect = QPushButton(self.centralwidget)
-        self.btn_connect.setObjectName(u"btn_connect")
-
-        self.gridLayout.addWidget(self.btn_connect, 0, 4, 1, 1)
 
         self.btn_start = QPushButton(self.centralwidget)
         self.btn_start.setObjectName(u"btn_start")
@@ -121,7 +118,7 @@ class Ui_MainWindow(object):
         self.label.setText(QCoreApplication.translate("MainWindow", u"Run Diagram:", None))
         self.btn_delete.setText(QCoreApplication.translate("MainWindow", u"delete", None))
         self.btn_libraryBrowser.setText(QCoreApplication.translate("MainWindow", u"Library Browser", None))
-        self.btn_connect.setText(QCoreApplication.translate("MainWindow", u"connect", None))
+
         self.btn_start.setText(QCoreApplication.translate("MainWindow", u"Start", None))
     # retranslateUi
 

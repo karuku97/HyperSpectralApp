@@ -12,10 +12,10 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QGridLayout, QHe
 import functions
 
 
-class LibraryWindow(QWidget):
+class LibraryWindow(QWidget ):
     """Library Window Class for creating the Library Window"""
 
-    def __init__(self, parent=None):
+    def __init__(self,mainwindow, parent=None):
         """Installation"""
         super().__init__(parent)
 
@@ -47,6 +47,9 @@ class LibraryWindow(QWidget):
 
         # Function call to fill the Library with all funkctons
         self.fillLibrary()
+        self.tree_second.doubleClicked.connect(self.mouseDoubleClick)
+
+        self.mainwindow = mainwindow
 
     def fillLibrary(self):
         """Fills the QTree Widget with all funktions"""
@@ -55,6 +58,12 @@ class LibraryWindow(QWidget):
         # loop throu every function and adds Treewidget from function
         for fct in list_of_fct:
             self.tree_second.addTopLevelItem(fct.createTreeWidget())
+
+    def mouseDoubleClick(self, event):
+
+        item = self.tree_second.itemFromIndex(event).data(0,Qt.ItemDataRole.UserRole)
+
+        self.mainwindow.funcAddedLib.emit(item.__class__())
 
     def closeEvent(self, e):
         """hides Window if it is supposed to be closed"""

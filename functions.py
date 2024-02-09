@@ -94,12 +94,26 @@ class loadHyperCube(function):
         self.frame = None
         self.infoText = ""
         self.info = f'{self.name}\n\nSelect Hyperspectral Cube\nsupported datastructures: *.BIL\n'
+        self.Debug = False
 
         #self.info = "test"
+
+    def debug(self):
+        """Debug Option, for Testing only! If Enabled, Funktion works in stand alone"""
+
+        self.dir = "C:/Users/karlk/Desktop/Arbeit/HyperSpec/Bil/Full7.bil"
+
     def run(self):
-        self.output_value = envi.open(self.dir[0:len(str(self.dir)) - 4] + ".hdr", self.dir)
-        self.infoText = open(self.dir[0:len(str(self.dir)) - 4] + ".hdr", "r").read()
-        return True
+        if self.dir == "": return "Kein Pfad angegeben"
+        try:
+            if self.Debug:
+                self.debug()
+
+            self.output_value = envi.open(self.dir[0:len(str(self.dir)) - 4] + ".hdr", self.dir)
+            self.infoText = open(self.dir[0:len(str(self.dir)) - 4] + ".hdr", "r").read()
+            return True
+        except:
+            return "Verbindung fehlt oder Fehlerhaft"
 
     def get_Viewport(self, mainwindow) -> QFrame:
         self.frame = QFrame()
@@ -167,6 +181,7 @@ class displayRGB(function):
         self.bands = None
         self.hsObj = None
         self.RGB_Bands = [744, 422, 87]  # Default Wavelength from HypX1
+        self.Debug = False
 
         self.info = (f'{self.name}\n'
                      f'\nFunction for extracting RGB Values from Hyperspectral Cube und displaying them.\n'
@@ -178,19 +193,22 @@ class displayRGB(function):
     def debug(self):
         """Debug Option, for Testing only! If Enabled, Funktion works in stand alone"""
         # dir = "/Users/karlkuckelsberg/Desktop/Arbeit/HyperSpec/Ral/Bil/Teflon.bil"
-        dir = "/Users/karlkuckelsberg/Desktop/Arbeit/HyperSpec/Bil/Full7.bil"
-        self.hsObj = sp.envi.open(dir[0:len(dir) - 4] + ".hdr", dir)
-        self.bands = self.hsObj.bands.centers
-        self.input_value = self.hsObj
+        dir = "C:/Users/karlk/Desktop/Arbeit/HyperSpec/Bil/Full7.bil"
+        self.input_value = sp.envi.open(dir[0:len(dir) - 4] + ".hdr", dir)
+        self.bands = self.input_value.bands.centers
+
 
     def run(self):
         """Gets RGB Picture from provided Wavelength"""
-        self.hsObj = self.input_value
-        if self.Debug:
-            self.debug()
-        self.RGB = sp.get_rgb(self.input_value, self.RGB_Bands)
+        try:
+            self.input_value = self.input_point.output_value
+            if self.Debug:
+                self.debug()
+            self.RGB = sp.get_rgb(self.input_value, self.RGB_Bands)
 
-        return True
+            return True
+        except:
+            return "Verbindung fehlt oder Fehlerhaft"
 
     def get_Viewport(self, mainwindow) -> QFrame:
         # Frame (Container)
@@ -413,9 +431,9 @@ class extractSpectrum(function):
         """Debug Option, for Testing only!// Works as stand onlone function"""
         # dir = "/Users/karlkuckelsberg/Desktop/Arbeit/HyperSpec/Ral/Bil/Teflon.bil"
         dir = "/Users/karlkuckelsberg/Desktop/Arbeit/HyperSpec/Bil/Full7.bil"
-        self.hsObj = sp.envi.open(dir[0:len(dir) - 4] + ".hdr", dir)
+        self.input_value = sp.envi.open(dir[0:len(dir) - 4] + ".hdr", dir)
 
-        self.input_value = self.hsObj
+
 
     def get_Viewport(self, mainwindow) -> QFrame:
         self.mainwindow = mainwindow
@@ -444,7 +462,7 @@ class extractSpectrum(function):
             self.lbl_pic.setAlignment(Qt.AlignLeading | Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
 
             # set RGB Picture to pixmap and aplly to label
-            self.pixmap = self.convertCvImage2QtImage(sp.get_rgb(self.hsObj, self.RGB_Values))
+            self.pixmap = self.convertCvImage2QtImage(sp.get_rgb(self.input_value, self.RGB_Values))
             w = self.lbl_pic.width()
             h = self.lbl_pic.height()
             pm = self.pixmap.scaled(w, h, Qt.KeepAspectRatio)
@@ -519,7 +537,7 @@ class extractSpectrum(function):
         # start CSV writer
         writer = csv.writer(f)
         # writes Band Values
-        writer.writerow(self.hsObj.bands.centers)
+        writer.writerow(self.input_value.bands.centers)
         data = []
 
         # adds all VAlues of added Plots from Plot Tree
@@ -711,7 +729,7 @@ class extractSpectrum(function):
         plt.subplots_adjust(left=0.2, right=0.95, bottom=0.2, top=0.95)
 
         self.figure.clear()
-        bands = self.hsObj.bands.centers
+        bands = self.input_value.bands.centers
         values = self.PlotData
 
         plt.plot(bands, values, color="red")
@@ -723,10 +741,10 @@ class extractSpectrum(function):
             plt.plot(bands, data, color=color)
 
         xmin, xmax, ymin, ymax = plt.axis()
-        plt.vlines(self.hsObj.bands.centers[self.RGB_Values[0]], 0, ymax, colors="red")
-        plt.vlines(self.hsObj.bands.centers[self.RGB_Values[1]], 0, ymax, colors="green")
-        plt.vlines(self.hsObj.bands.centers[self.RGB_Values[2]], 0, ymax, colors="blue")
-        plt.xlabel(f'{"Wavelength in "}{self.hsObj.bands.band_unit}')
+        plt.vlines(self.input_value.bands.centers[self.RGB_Values[0]], 0, ymax, colors="red")
+        plt.vlines(self.input_value.bands.centers[self.RGB_Values[1]], 0, ymax, colors="green")
+        plt.vlines(self.input_value.bands.centers[self.RGB_Values[2]], 0, ymax, colors="blue")
+        plt.xlabel(f'{"Wavelength in "}{self.input_value.bands.band_unit}')
         plt.ylabel("Intensity")
 
         self.canvas.draw()
@@ -769,9 +787,9 @@ class extractSpectrum(function):
         pen.setColor(QtGui.QColor('red'))
         painter.setPen(pen)
 
-        painter.drawLine(self.position[0], 0, self.position[0], self.hsObj.nrows)
+        painter.drawLine(self.position[0], 0, self.position[0], self.input_value.nrows)
 
-        painter.drawLine(0, self.position[1], self.hsObj.ncols, self.position[1])
+        painter.drawLine(0, self.position[1], self.input_value.ncols, self.position[1])
         painter.end()
 
         w = self.lbl_pic.width()
@@ -783,20 +801,22 @@ class extractSpectrum(function):
 
     def run(self):
         """Calculates Plot Data for given Point"""
-        if self.Debug:
-            self.debug()
+        try:
+            if self.Debug:
+                self.debug()
 
-        self.hsObj = self.input_value
-        y = int(self.input_value.nrows / 2)
-        x = int(len(self.input_value.bands.centers) / 2)
+            self.input_value = self.input_point.output_value
+            y = int(self.input_value.nrows / 2)
+            x = int(len(self.input_value.bands.centers) / 2)
 
-        self.SpyArray = sp.SpyFile.load(self.input_value)
+            self.SpyArray = sp.SpyFile.load(self.input_value)
 
-        self.PlotData = self.SpyArray[x, y]
-        # print(self.PlotData)
+            self.PlotData = self.SpyArray[x, y]
+            # print(self.PlotData)
 
-        return True
-
+            return True
+        except:
+            return "Verbindung fehlt oder Fehlerhaft"
 
 if __name__ == "__main__":
     pass
