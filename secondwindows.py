@@ -27,6 +27,10 @@ class LibraryWindow(QWidget ):
         self.label = QLabel("Library: ")
         self.gridLayout.addWidget(self.label, 0, 0)
 
+        # discription
+        self.label_discrip = QLabel("Doubleklick to add to mainwindow.")
+        self.gridLayout.addWidget(self.label_discrip,2,0)
+
         # adds QTree Widget for displaying all Functions
         self.tree_second = QTreeWidget(self)
         self.tree_second.setObjectName(u"tree_second")
@@ -54,7 +58,7 @@ class LibraryWindow(QWidget ):
     def fillLibrary(self):
         """Fills the QTree Widget with all funktions"""
         # List of all function, supossed to be shown
-        list_of_fct = [functions.loadHyperCube(), functions.displayRGB(), functions.extractSpectrum()]
+        list_of_fct = [functions.loadHyperCube(), functions.displayRGB(), functions.extractSpectrum(), functions.captureHyperCube()]
         # loop throu every function and adds Treewidget from function
         for fct in list_of_fct:
             self.tree_second.addTopLevelItem(fct.createTreeWidget())

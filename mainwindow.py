@@ -39,7 +39,7 @@ class DraggableRectItemBlock(QGraphicsRectItem):
 
 
     def mousePressEvent(self, event: QMouseEvent):
-
+        self.main_window.blockdoubleClicked.emit(self.function)
         self.main_window.selectedBlock = self
         self.original_position = self.pos()
         super().mousePressEvent(event)
@@ -50,7 +50,7 @@ class DraggableRectItemBlock(QGraphicsRectItem):
 
 
 class DraggableRectItemConnector(QGraphicsRectItem):
-    def __init__(self, rect, main_window, parent):
+    def __init__(self, rect :QRect, main_window,type, parent):
         super().__init__(rect, parent)
         self.setParentItem(parent)
         self.setFlags(QGraphicsItem.ItemIsSelectable )
@@ -59,6 +59,21 @@ class DraggableRectItemConnector(QGraphicsRectItem):
         self.connectedTo = []
         self.rect_height = 10
         self.rect_width = 10
+        self.TextItem = QGraphicsTextItem( self)
+        self.typ = type
+
+        if self.typ == "Input":
+            #self.setTransformOriginPoint(rect.center())
+
+            self.TextItem.setPos(rect.x()  - 2,rect.y() - 8)
+            self.TextItem.setPlainText("<")
+
+        if self.typ == "Output":
+            #self.setTransformOriginPoint(rect.center())
+
+            self.TextItem.setPos(rect.x()  - 2,rect.y() - 8)
+            self.TextItem.setPlainText(">")
+
 
         self.original_position = None
 
@@ -93,6 +108,7 @@ class MainWindow(QMainWindow):
         self.ui.btn_start.pressed.connect(self.start_btn_pressed)
         self.ui.btn_delete.pressed.connect(self.delete_btn_pressed)
         self.ui.btn_libraryBrowser.pressed.connect(self.open_library)
+        self.ui.btn_delete_con.pressed.connect(self.delete_con_btn_pressed)
 
         # library
         self.lib = LibraryWindow(self)
@@ -178,8 +194,18 @@ class MainWindow(QMainWindow):
         rect.function = fcn
         rect.setToolTip(fcn.info)
 
+        total = fcn.input_count + fcn.output_count
+        distance = rect_height / (total+1)
 
-        input = DraggableRectItemConnector(QRectF(rect_width, (rect_height / 2) - 5, 10, 10), self, rect)
+        for i in range(fcn.input_count):
+            DraggableRectItemConnector(QRectF(rect_width, (distance) - 5, 10, 10), self,'Input', rect)
+            distance = distance + rect_height / (total+1)
+
+        for i in range(fcn.output_count):
+            DraggableRectItemConnector(QRectF(rect_width, (distance) - 5, 10, 10), self,'Output', rect)
+            distance = distance + rect_height / (total+1)
+
+        #DraggableRectItemConnector(QRectF(rect_width, (rect_height / 2) - 5, 10, 10), self, rect)
 
         self.ui.scene.addItem(rect)
         self.blocks.append(rect)
@@ -211,10 +237,14 @@ class MainWindow(QMainWindow):
         itemAtClick = moved_connecor
         # print(moved_connecor.parentItem().TextItem.toPlainText())
         # print(event)
-        itemAtRelease = self.ui.scene.itemAt(event.scenePos().x(), event.scenePos().y(), self.ui.gph_view.transform())
+        itemAtRelease = self.ui.scene.itemAt(event.scenePos().x(), event.scenePos().y(), self.ui.gph_view.transform()).parentItem()
         #print(itemAtRelease.parentItem().TextItem.toPlainText())
         #print(itemAtRelease.scenePos())
-        if isinstance(itemAtRelease, DraggableRectItemConnector):
+        if itemAtRelease.typ == itemAtClick.typ:
+            self.showErrorMassage("Connect Input with Output!")
+            return
+
+        if isinstance(itemAtRelease, DraggableRectItemConnector) and not itemAtClick == itemAtRelease:
             itemAtClick.connectedTo.append(itemAtRelease)
             itemAtRelease.connectedTo.append(itemAtClick)
 
@@ -223,10 +253,10 @@ class MainWindow(QMainWindow):
             i = itemAtRelease.parentItem().index + itemAtClick.parentItem().index
 
             # Vertikale linie
-            x1 = itemAtClick.rect().x() + 5 + (i * offset)
+            x1 = itemAtClick.rect().x() + 10 + (i * offset)
             y1 = itemAtClick.rect().y() + 5
             x2 = itemAtRelease.parentItem().rect().x() + itemAtRelease.parentItem().rect_width + itemAtRelease.rect_width / 2 + (
-                        i * offset)
+                        i * offset)+5
             y2 = itemAtRelease.parentItem().y() + itemAtRelease.parentItem().rect_height / 2 - itemAtClick.parentItem().y()
             line = QGraphicsLineItem(x1, y1, x2, y2, moved_connecor)
 
@@ -263,8 +293,9 @@ class MainWindow(QMainWindow):
 
                             for child in b_c.childItems():
                                 #print(child)
-                                self.ui.scene.removeItem(child)
-                                del child
+                                if type(child) != QGraphicsTextItem:
+                                    self.ui.scene.removeItem(child)
+                                    del child
 
 
 
@@ -273,10 +304,10 @@ class MainWindow(QMainWindow):
                             i = con_to.parentItem().index + con_from.parentItem().index
 
                             # Vertikale linie
-                            x1 = con_from.rect().x() + 5 + (i * offset)
+                            x1 = con_from.rect().x() + 10 + (i * offset)
                             y1 = con_from.rect().y() + 5
                             x2 = con_to.parentItem().rect().x() + con_to.parentItem().rect_width + con_to.rect_width / 2 + (
-                                        i * offset)
+                                        i * offset)+5
                             y2 = con_to.parentItem().y() + con_to.parentItem().rect_height / 2 - con_from.parentItem().y()
                             line1 = QGraphicsLineItem(x1, y1, x2, y2, con_from)
 
@@ -317,6 +348,7 @@ class MainWindow(QMainWindow):
             self.showErrorMassage("Error: No actions provided")
             return False
 
+        self.showErrorMassage("running...")
         for b in self.blocks:
             fcn = b.function
             rtn = fcn.run()
@@ -328,6 +360,33 @@ class MainWindow(QMainWindow):
 
         self.updateViewport(self.currentViewFcn)
         self.showErrorMassage("Done")
+
+    def delete_con_btn_pressed(self):
+
+        if isinstance(self.selectedBlock, DraggableRectItemBlock):
+            item = self.selectedBlock
+            # finde connector des zu löschenden blocks und lösche reference
+            for c in item.childItems():
+                if isinstance(c, DraggableRectItemConnector):
+                    itemConnector = c
+                    c.connectedTo = []
+
+            # verbindungsreferenz löschen
+            for b in self.blocks:
+                for bchild in b.childItems():
+                    if isinstance(bchild, DraggableRectItemConnector):
+
+                        if itemConnector in bchild.connectedTo:
+                            bchild.connectedTo.remove(itemConnector)
+            # alle Verbindungen löschen
+            for b in self.blocks:
+                for c in b.childItems():
+                    for cc in c.childItems():
+                        if isinstance(cc, QGraphicsLineItem):
+                            self.ui.scene.removeItem(cc)
+
+
+            self.updateAllConnections()
 
 
     def delete_btn_pressed(self):

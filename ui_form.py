@@ -32,7 +32,8 @@ class Ui_MainWindow(object):
         self.gridLayout.setContentsMargins(5, 5, 5, 5)
         self.frame = QFrame(self.centralwidget)
         self.frame.setObjectName(u"frame")
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.frame.setMinimumWidth(300)
+        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
@@ -62,6 +63,11 @@ class Ui_MainWindow(object):
         self.btn_delete.setObjectName(u"btn_delete")
 
         self.gridLayout.addWidget(self.btn_delete, 0, 3, 1, 1)
+
+        self.btn_delete_con = QPushButton(self.centralwidget)
+        self.btn_delete_con.setObjectName(u"btn_delete")
+
+        self.gridLayout.addWidget(self.btn_delete_con, 0, 4, 1, 1)
 
         self.btn_libraryBrowser = QPushButton(self.centralwidget)
         self.btn_libraryBrowser.setObjectName(u"btn_libraryBrowser")
@@ -117,6 +123,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Hyper Spektral APP", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Run Diagram:", None))
         self.btn_delete.setText(QCoreApplication.translate("MainWindow", u"delete", None))
+        self.btn_delete_con.setText(QCoreApplication.translate("MainWindow", u"delete connections", None))
         self.btn_libraryBrowser.setText(QCoreApplication.translate("MainWindow", u"Library Browser", None))
 
         self.btn_start.setText(QCoreApplication.translate("MainWindow", u"Start", None))
